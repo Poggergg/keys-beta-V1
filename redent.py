@@ -58,7 +58,6 @@ def signup():
   return 'Bad login'
 
 @app.route('/@me')
-  
 @flask_login.login_required
 def protected():
   return flask.render_template("base.html", u = flask_login.current_user.id)
