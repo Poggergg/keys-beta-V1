@@ -1,5 +1,6 @@
 import flask
 import flask_login
+from db import db, db_ext
 
 app = flask.Flask(__name__)
 
@@ -11,13 +12,16 @@ login_manager.init_app(app)
 # Our mock database.
 users = {'foo@bar.tld': {'password': 'secret'}}
 
+db._set("mydb.json")
+db._unappend(mode='file')
+
 class User(flask_login.UserMixin):
     pass
 
 
 @login_manager.user_loader
 def user_loader(email):
-    if email not in users:
+    if email not in db._unappend(mode='file'):
         return
 
     user = User()
@@ -34,6 +38,12 @@ def request_loader(request):
     user = User()
     user.id = email
     return user
+
+
+@app.route('/')
+def landing():
+  return flask.render_template("home.html")
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -71,4 +81,4 @@ def logout():
 def unauthorized_handler():
     return 'Unauthorized'
 
-app.run(host="0.0.0.0")
+app.run(host="0.0.0.0", debug=True)
