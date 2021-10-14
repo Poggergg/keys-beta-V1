@@ -1,6 +1,7 @@
 import flask
+from flask import request, flash
 import flask_login
-from db import db, db_ext
+from db import userDB, db_ext, msgDB
 
 app = flask.Flask(__name__)
 
@@ -12,8 +13,8 @@ login_manager.init_app(app)
 # Our mock database.
 users = {'foo@bar.tld': {'password': 'secret'}}
 
-db._set("mydb.json")
-db._unappend(mode='file')
+userDB._set("mydb.json")
+msgDB._set("mymsgdb.json")
 
 class User(flask_login.UserMixin):
     pass
@@ -21,7 +22,7 @@ class User(flask_login.UserMixin):
 
 @login_manager.user_loader
 def user_loader(email):
-    if email not in db._unappend(mode='file'):
+    if email not in userDB._unappend(mode='file'):
         return
 
     user = User()
@@ -42,7 +43,7 @@ def request_loader(request):
 
 @app.route('/')
 def landing():
-  return flask.render_template("home.html")
+    return flask.render_template("home.html")
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -50,10 +51,9 @@ def login():
     if flask.request.method == 'GET':
         return '''
                <form action='login' method='POST'>
-                <input type='text' name='email' id='email' placeholder='email'/>
-                <input type='password' name='password' id='password' placeholder='password'/>
-                <input type='submit' name='submit'/>
-               </form>
+                 <input type='text' name='email' id='email' placeholder='email'/>
+                 <input type='password' name='password' id='password' placeholder='password'/>                 <input type='submit' name='submit'/>
+                </form>
                '''
 
     email = flask.request.form['email']
@@ -66,10 +66,25 @@ def login():
     return 'Bad login'
 
 
-@app.route('/protected')
+@app.route('/render/<temp>')
+def render(temp):
+    return flask.render_template(temp)
+
+
+@app.route('/home')
 @flask_login.login_required
 def protected():
-    return 'Logged in as: ' + flask_login.current_user.id
+    return flask_login.current_user.id
+
+
+@app.route('/sign-up')
+def sign_up():
+    return flask.render_template("sign-up.html")
+
+
+@app.route('/sign-up/', methods=["POST"])
+def sign_upP():
+    return request.form['Username']
 
 
 @app.route('/logout')
@@ -77,8 +92,13 @@ def logout():
     flask_login.logout_user()
     return 'Logged out'
 
+@app.route('/test#<thing>')
+def f(thing):
+  return thing
+
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-    return 'Unauthorized'
+    return flask.redirect('/login')
+
 
 app.run(host="0.0.0.0", debug=True)
