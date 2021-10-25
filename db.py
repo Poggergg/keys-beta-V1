@@ -56,7 +56,14 @@ class msgDB:
       except KeyError:
         return "404 message not found"
   
-      
+class CDB:
+  @staticmethod
+  def _append(key, val):
+    with open("codelogs.json", "r") as E:
+      lE = json.load(E)
+      lE[key] = val
+    with open("codelogs.json", "w") as E:
+      json.dump(lE, E)
 
 class db_ext:
   @staticmethod
