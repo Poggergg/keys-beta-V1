@@ -21,7 +21,7 @@ class userDB:
       json.dump(lE, E)
   
   @staticmethod
-  def _unappend(key=None, mode='key'):
+  def _unappend(mode='key'):
     """Unappends the user to handle :name:, :password:, :ID:, :etc:"""
     with open(Udb['file'], "r") as E:
       lE = json.load(E)

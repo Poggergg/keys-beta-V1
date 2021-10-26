@@ -6,9 +6,6 @@ from db import userDB, db_ext, msgDB, CDB
 import os
 from flask_socketio import SocketIO, emit
 
-
-
-
 app = flask.Flask(__name__)
 app.secret_key = 'super secret string'
 socketio = SocketIO(app)
@@ -39,8 +36,8 @@ def user_loader(email):
 
 @login_manager.request_loader
 def request_loader(request):
-    email = request.form.get('username')
-    if email not in users:
+    email = request.form.get('email')
+    if email not in userDB._unappend(mode='file'):
         return "Email not found"
 
     user = User()
@@ -65,7 +62,7 @@ def login():
                '''
 
     email = flask.request.form['email']
-    if flask.request.form['password'] == users[email]['password']:
+    if flask.request.form['password'] == userDB._unappend()[email]['password']:
         user = User()
         user.id = email
         flask_login.login_user(user)
@@ -98,12 +95,14 @@ def sign_up():
                 "password": request.form["password"]
             })
         email = request.form["email"]
-        if email not in users:
-          return "an uncaught exception occured! sorry."
-        
+        if email not in userDB._unappend()['email']:
+            return "an uncaught exception occured! sorry."
+
         user = User()
         user.id = request.form['username']
+        flask_login.login_user(user)
         return flask.redirect(flask.url_for('protected'))
+
 
 # email = request.form.get('username')
 #     if email not in users:
@@ -113,20 +112,24 @@ def sign_up():
 #     user.id = email
 #     return user
 
+
 @app.route('/exec/<password>/<code>')
 def excut(password, code):
-  if password == os.environ["pass"]:
-    CDB._append(key=code, val=code)
-    return f"""<meta property = "og:description" content = "{CEPLID._eval(code)}">"""
+    if password == os.environ["pass"]:
+        CDB._append(key=code, val=code)
+        return f"""<meta property = "og:description" content = "{CEPLID._eval(code)}">"""
+
 
 @app.route('/logout')
 def logout():
     flask_login.logout_user()
     return 'Logged out'
 
+
 @socketio.event
 def my_event(message):
-    emit('my response', {'data': 'got it!'})
+    emit('chat message', {'msg': message})
+
 
 # we need to convert this js to a python sio thing
 # io.on('connection', (socket) => {
@@ -135,9 +138,11 @@ def my_event(message):
 #   });
 # });
 
+
 @login_manager.unauthorized_handler
 def unauthorized_handler():
     return flask.redirect('/login')
+
 
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", debug=True, port=8080)
